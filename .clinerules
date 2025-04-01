@@ -1,0 +1,295 @@
+# プロジェクトガイドライン
+
+## Development
+
+
+# ビジネスロジックの書き方
+
+以下にビジネスロジックの書き方について記述する。
+```ts
+// user.ts
+interface User {
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+}
+
+export const getFullName = (user: User): string => {
+  if (user.middleName) {
+    return `${user.firstName} ${user.middleName} ${user.lastName}`;
+  }
+  return `${user.firstName} ${user.lastName}`;
+};
+```
+
+以下にこのビジネスロジックのテストを記述する。
+```ts
+// user.test.ts
+import {describe, expect, it} from 'vitest';
+import {getFullName} from './user';
+
+describe('getFullName', () => {
+  it('should return full name', () => {
+    const user = {
+      firstName: 'John',
+      lastName: 'Doe',
+    };
+    expect(getFullName(user)).toBe('John Doe');
+  });
+
+  it('should return full name with middle name', () => {
+    const user = {
+      firstName: 'John',
+      middleName: 'Smith',
+      lastName: 'Doe',
+    };
+    expect(getFullName(user)).toBe('John Smith Doe');
+  });
+});
+
+
+
+# 技術要件
+
+- TypeScriptを使用して開発を行うこと
+- Next.jsを使用してフロントエンドを開発すること
+- 認証はOIDC準拠のものを使うこと
+- APIに関するものはOpenAPI仕様書から生成すること
+
+
+
+# コードスタイルとパターン
+
+- .devcontainerを使用して開発環境を統一すること
+- .editorconfigを使用してエディタの設定を統一すること
+- GitHub Actionsを使用してCIを行うこと
+- ESLintを使用してコードスタイルを統一すること
+- Prettierを使用してコードフォーマットを統一すること
+- TypeScriptの型定義は可能な限り具体的に記述すること
+
+
+
+# CLIツールの実装
+
+## Inquirerの使用
+
+CLIツールを実装する際は、ユーザーとのインタラクションに[Inquirer.js](https://github.com/SBoudrias/Inquirer.js/)を使用してください。Inquirerは、コマンドラインでのユーザー入力を簡単に処理するためのライブラリです。
+
+### 基本的な使用方法
+
+```javascript
+const inquirer = require('inquirer');
+
+async function getUserInput() {
+  const answers = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'username',
+      message: 'ユーザー名を入力してください:',
+      default: 'user'
+    },
+    {
+      type: 'password',
+      name: 'password',
+      message: 'パスワードを入力してください:'
+    },
+    {
+      type: 'list',
+      name: 'role',
+      message: '役割を選択してください:',
+      choices: ['管理者', '編集者', '閲覧者']
+    }
+  ]);
+  
+  return answers;
+}
+```
+
+### 推奨される入力タイプ
+
+以下の入力タイプを状況に応じて使い分けてください：
+
+- `input`: 一般的なテキスト入力
+- `password`: パスワードなどの秘匿情報の入力
+- `list`: 単一選択のリスト
+- `checkbox`: 複数選択のチェックボックス
+- `confirm`: はい/いいえの確認
+- `editor`: 複数行のテキスト入力
+
+### バリデーション
+
+ユーザー入力のバリデーションを行うには、各質問オブジェクトに`validate`関数を追加してください：
+
+```javascript
+{
+  type: 'input',
+  name: 'email',
+  message: 'メールアドレスを入力してください:',
+  validate: function(value) {
+    const valid = /\S+@\S+\.\S+/.test(value);
+    return valid || 'メールアドレスの形式が正しくありません';
+  }
+}
+```
+
+### 条件付き質問
+
+前の回答に基づいて質問を表示するには、`when`関数を使用してください：
+
+```javascript
+{
+  type: 'confirm',
+  name: 'wantNotifications',
+  message: '通知を受け取りますか？'
+},
+{
+  type: 'input',
+  name: 'email',
+  message: '通知先のメールアドレスを入力してください:',
+  when: function(answers) {
+    return answers.wantNotifications;
+  }
+}
+```
+
+## ベストプラクティス
+
+1. **ヘルプを提供する**: `--help`フラグでコマンドの使用方法を表示する機能を実装してください。
+2. **エラーハンドリング**: ユーザー入力のエラーを適切に処理し、わかりやすいエラーメッセージを表示してください。
+3. **進行状況の表示**: 長時間実行される処理では、進行状況を表示してください。
+4. **カラー表示**: 重要な情報や警告、エラーメッセージには適切な色を使用してください。
+5. **設定の保存**: ユーザーの設定や入力を保存して、次回の実行時に再利用できるようにしてください。
+
+
+## Documentation
+
+
+# ドキュメント要件
+
+- APIに関するドキュメントはOpenAPI仕様書で記述すること
+- TypeScriptのコードにはJSDocを記述すること
+
+
+## Frontend
+
+
+# Next.js
+
+- App routerを使用すること
+- ServerComponentを積極的に使用すること
+- Componentをできる限り細かく分割すること
+- ビジネスロジックは使用するコンポーネントの直下にlibディレクトリに分離すること
+
+
+
+# ESLintの設定
+
+- TypeScriptのコードに対しては`@typescript-eslint`を使用すること
+- ルールの設定は`.eslintrc.js`に記述すること
+- ルールの設定は可能な限り厳格にすること
+- ルールはFlatConfigを使用して設定すること
+
+
+
+# コンポーネントの書き方
+
+以下にコンポーネントの書き方について記述する。
+```tsx
+import {JSX} from 'react';
+
+interface Props {
+  name: string;
+  age: number;
+}
+
+const MyComponent = ({name, age}: Props): JSX.Element => {
+  return (
+    <div>
+      <p>{name}</p>
+      <p>{age}</p>
+    </div>
+  );
+};
+
+export default MyComponent;
+
+
+
+# テスト基準
+
+- ビジネスロジックは純粋な関数として実装し、テストを行うこと
+- テストはVitestを使用して行うこと
+- テストは*.test.tsで記述すること
+- コンポーネントのテストはReact Testing Libraryを使用して行うこと
+
+
+
+# TypeScriptの型定義
+
+- `any`型の使用を避けること
+- `unknown`型を使用して型安全性を高めること
+- 型ガードを使用して型の安全性を高めること
+- interfaceをできる限り使用すること
+- 型キャストは使用しないこと
+
+
+## Api
+
+
+# OpenAPI 仕様書の書き方
+
+- OpenAPI仕様書はYAML形式で記述すること
+- Componentsを使用してスキーマを定義すること
+- 3.1を使用すること
+- 入力のスキーマにはInputの接尾辞をつけること
+- 出力のスキーマにはOutputの接尾辞をつけること
+- 入力の例を記述すること
+- 出力の例を記述すること
+- 200, 400のレスポンスは必ず記述すること
+
+以下にOpenAPI仕様書の書き方について記述する。
+
+```yaml
+openapi: 3.1.0
+info:
+  title: Sample API
+  version: 1.0.0
+paths:
+  /users:
+    get:
+      responses:
+        '200':
+          description: A list of users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsersOutput'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+    UsersOutput:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+
+
