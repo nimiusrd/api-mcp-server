@@ -1,35 +1,129 @@
-# Cline 活用リポジトリ
+# API Suggestion Server
 
-このリポジトリは、コーディングタスク用のAIアシスタントであるClineを効果的に活用するためのものです。
+## 概要
 
-## ディレクトリ構造
+API Suggestion Serverは、OpenAPI仕様に基づいて適切なAPIエンドポイントを提案するMCP（Model Context Protocol）サーバーです。このサーバーは、ユーザーの目的や要件に基づいて、利用可能なAPIエンドポイントの中から最適なものを提案します。
 
-- `src/`: ソースコードファイル
-- `docs/`: ドキュメント
-- `examples/`: Clineの使用例
-- `.cline/`: Clineのルールファイル
+## 機能
 
-## このリポジトリの使い方
+- 複数のOpenAPI仕様（YAMLまたはJSON形式）からAPIエンドポイント情報を収集
+- ユーザーの目的に基づいて関連するAPIエンドポイントを提案
+- MCPプロトコルを通じてAIモデルと連携
 
-このリポジトリでは、Clineが支援できる様々なタスクの例とテンプレートを提供しています：
+## 前提条件
 
-1. コード生成
-2. コード説明
-3. デバッグ
-4. リファクタリング
-5. UI/UX開発
-6. テスト
+- Node.js 18以上
+- npm または yarn
 
-具体的な使用例については、examplesディレクトリをご確認ください。
-
-## Clineルールの活用
-
-このリポジトリでは、`.cline`ディレクトリに様々なプロジェクトルールを個別のファイルとして保存しています。これらのルールから必要なものを選択して、プロジェクトルートの`.clinerules`ファイルを生成するCLIツールを提供しています。
-
-### ルール生成ツールの使用方法
+## インストール
 
 ```bash
-node src/cline-rules-generator.js
+# リポジトリをクローン
+git clone https://github.com/yourusername/api-mcp-server.git
+cd api-mcp-server
+
+# 依存関係をインストール
+npm install
 ```
 
-このコマンドを実行すると、利用可能なルールのリストが表示され、どのルールを`.clinerules`ファイルに含めるかを選択できます。詳細については、`.cline/README.md`をご確認ください。
+## 設定
+
+サーバーの設定は`server.config.ts`ファイルで管理されています。以下のように設定を変更できます：
+
+```typescript
+import { ServerConfig } from "./src/types.ts";
+
+export const config: ServerConfig = {
+  name: "api-suggestion-server",
+  version: "1.0.0",
+  services: [
+    {
+      name: "サービス名",
+      // OpenAPI仕様のURLを指定
+      openApiUrl: "https://example.com/api/openapi.json"
+    },
+    {
+      name: "別のサービス",
+      // ローカルファイルパスを指定（YAMLまたはJSON）
+      openApiFilePath: "./schemas/your-api.yaml"
+    }
+  ]
+};
+```
+
+## 使い方
+
+### サーバーの起動
+
+```bash
+npm start
+```
+
+サーバーは標準入出力（stdio）を通じてMCPプロトコルで通信します。
+
+### AIモデルとの連携
+
+このサーバーはMCPプロトコルを実装しており、Claude、GPT-4などのAIモデルと連携できます。AIモデルは以下のツールを呼び出すことができます：
+
+#### suggest_api
+
+指定された用途に適したAPIエンドポイントを提案します。
+
+**入力パラメータ**:
+- `purpose`: APIエンドポイントを使用したい用途や目的の説明（文字列）
+
+**出力**:
+- 関連するAPIエンドポイントのリスト（サービス名、パス、メソッド、説明を含む）
+
+**使用例**:
+```json
+{
+  "name": "suggest_api",
+  "arguments": {
+    "purpose": "ユーザー情報を取得する"
+  }
+}
+```
+
+**応答例**:
+```json
+{
+  "toolResult": [
+    {
+      "service": "サンプルAPI",
+      "path": "/users/{userId}",
+      "method": "GET",
+      "description": "指定されたIDのユーザー情報を取得します"
+    },
+    {
+      "service": "サンプルAPI",
+      "path": "/users",
+      "method": "GET",
+      "description": "登録されているすべてのユーザーの一覧を取得します"
+    }
+  ]
+}
+```
+
+## カスタマイズ
+
+### 新しいOpenAPI仕様の追加
+
+1. OpenAPI仕様ファイル（YAMLまたはJSON）を`schemas`ディレクトリに追加するか、公開URLを用意します
+2. `server.config.ts`ファイルを編集して新しいサービスを追加します
+
+### サポートされるフォーマット
+
+- YAML形式のOpenAPI仕様（`.yaml`または`.yml`拡張子）
+- JSON形式のOpenAPI仕様（`.json`拡張子）
+- URLで指定されたOpenAPI仕様（コンテンツタイプに基づいて自動的に解析）
+
+## 開発
+
+### ビルド
+
+```bash
+npm run build
+```
+
+### ディレクトリ構造
