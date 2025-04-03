@@ -1,8 +1,9 @@
 import { readFileSync } from 'fs';
 import * as path from 'path';
-
+import { createServer } from 'node:http';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { z } from 'zod';
 
 import { config } from '../server.config.js';
@@ -81,11 +82,63 @@ server.tool('suggest_api',
   }
 );
 
+// 複数の同時接続をサポートするためのセッションIDによるトランスポートの格納
+const transports: {[sessionId: string]: SSEServerTransport} = {};
+
 // メイン関数
 async function main() {
-  const transport = new StdioServerTransport();
   await fetchApiEndpoints();
-  await server.connect(transport);
+
+  // サーバーの起動
+  const PORT = process.env.PORT || 3001;
+
+  // Node.jsサーバーの設定
+  const httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
+    // SSEエンドポイントの処理
+    if (req.url === '/sse') {
+      const transport = new SSEServerTransport('/messages', res);
+      transports[transport.sessionId] = transport;
+
+      res.on('close', () => {
+        delete transports[transport.sessionId];
+      });
+
+      server.connect(transport).catch(err => {
+        console.error('SSE接続でエラーが発生しました:', err);
+      });
+
+      return;
+    }
+
+    // メッセージ処理エンドポイントの処理
+    if (req.url?.startsWith('/messages') && req.method === 'POST') {
+      const url = new URL(req.url, `http://${req.headers.host}`);
+      const sessionId = url.searchParams.get('sessionId') || '';
+      const transport = transports[sessionId];
+
+      if (transport && sessionId) {
+        transport.handlePostMessage(req, res).catch(err => {
+          console.error('メッセージ処理でエラーが発生しました:', err);
+          res.statusCode = 500;
+          res.end('Internal Server Error');
+        });
+        return;
+      } else {
+        res.statusCode = 400;
+        res.end('No transport found for sessionId');
+        return;
+      }
+    }
+
+    // その他のリクエストに対するデフォルトレスポンス
+    res.statusCode = 404;
+    res.setHeader('Content-Type', 'text/plain');
+    res.end('Not Found');
+  });
+
+  httpServer.listen(Number(PORT), () => {
+    console.log(`サーバーが起動しました: http://localhost:${PORT}`);
+  });
 }
 
 // メイン関数の実行
