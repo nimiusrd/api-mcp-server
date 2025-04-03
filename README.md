@@ -61,6 +61,90 @@ npm start
 
 サーバーは標準入出力（stdio）を通じてMCPプロトコルで通信します。
 
+### 実行例
+
+以下は実際にAPIサジェストサーバーを使用する例です：
+
+1. サーバーの起動：
+
+```bash
+# ターミナルでサーバーを起動
+npm start
+```
+
+2. MCP対応のAIモデル（例：Claude）との連携：
+
+```javascript
+// MCPプロトコルを使用してAIモデルとの対話を設定
+const conversation = await anthropic.messages.create({
+  model: "claude-3-sonnet-20240229",
+  max_tokens: 1000,
+  messages: [{ role: "user", content: "ユーザー情報を取得するAPIはありますか？" }],
+  tools: [
+    {
+      // API Suggestion Serverのツール設定
+      name: "suggest_api",
+      description: "指定された用途に適したAPIエンドポイントをサジェストします。",
+      input_schema: {
+        type: "object",
+        properties: {
+          purpose: {
+            type: "string",
+            description: "APIエンドポイントを使用したい用途や目的の説明。",
+          },
+        },
+        required: ["purpose"],
+      }
+    }
+  ],
+  tool_choice: "auto"
+});
+
+// AIモデルの応答からツール呼び出しを処理
+if (conversation.content[0].type === "tool_use") {
+  const toolUse = conversation.content[0];
+  
+  // ツール呼び出しをMCPサーバーに転送
+  // ここでは簡略化していますが、実際にはMCPプロトコルの仕様に従った通信が必要です
+  const result = await mcpClient.callTool(toolUse.name, toolUse.input);
+  
+  // ツールの結果をAIモデルに返す
+  const followUp = await anthropic.messages.create({
+    model: "claude-3-sonnet-20240229",
+    max_tokens: 1000,
+    messages: [
+      { role: "user", content: "ユーザー情報を取得するAPIはありますか？" },
+      { role: "assistant", content: toolUse },
+      { 
+        role: "user", 
+        content: [
+          { type: "tool_result", tool_use_id: toolUse.id, content: JSON.stringify(result) }
+        ]
+      }
+    ]
+  });
+  
+  console.log(followUp.content);
+}
+```
+
+3. 実行結果の例：
+
+AIモデルは、サーバーから提供されたAPIエンドポイント情報を用いて以下のような応答を生成します：
+
+```
+はい、ユーザー情報を取得するためのAPIエンドポイントがいくつかあります：
+
+1. GET /users/{userId}
+   - 説明: 指定されたIDのユーザー情報を取得します
+   - サービス: サンプルAPI
+
+2. GET /users
+   - 説明: 登録されているすべてのユーザーの一覧を取得します
+   - サービス: サンプルAPI
+
+特定のユーザーの情報を取得するには「GET /users/{userId}」を使用し、ユーザーIDをパスパラメータとして指定します。複数のユーザー情報を一度に取得するには「GET /users」を使用できます。
+
 ### AIモデルとの連携
 
 このサーバーはMCPプロトコルを実装しており、Claude、GPT-4などのAIモデルと連携できます。AIモデルは以下のツールを呼び出すことができます：
@@ -126,4 +210,48 @@ npm start
 npm run build
 ```
 
+### テスト
+
+以下のコマンドでテストを実行できます：
+
+```bash
+# 全てのテストを実行
+npm test
+
+# テストをウォッチモードで実行（開発中に便利）
+npm run test:watch
+
+# カバレッジレポートを生成
+npm run test:coverage
+```
+
+テストは以下のカテゴリに分かれています：
+
+- **utils.test.ts**: OpenAPIドキュメントのパース機能のテスト
+- **server.test.ts**: サーバー初期化のテスト
+- **suggest-api.test.ts**: APIサジェスト機能のテスト
+
+新しいテストを追加する場合は、`src/tests`ディレクトリに`*.test.ts`ファイルを作成してください。
+
 ### ディレクトリ構造
+
+```
+api-mcp-server/
+├── src/
+│   ├── index.ts        # メインサーバーコード
+│   ├── utils.ts        # ユーティリティ関数
+│   ├── types.ts        # 型定義
+│   └── tests/          # テストファイル
+├── schemas/            # OpenAPI仕様ファイル
+├── server.config.ts    # サーバー設定
+├── tsconfig.json       # TypeScript設定
+└── package.json        # プロジェクト設定
+```
+
+## ライセンス
+
+ISC
+
+## 貢献
+
+バグ報告や機能リクエストは、GitHubのIssueトラッカーを通じてお願いします。プルリクエストも歓迎します。

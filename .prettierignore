@@ -1,0 +1,8 @@
+node_modules
+build
+coverage
+dist
+.git
+package-lock.json
+*.md
+.DS_Store

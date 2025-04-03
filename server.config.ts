@@ -1,16 +1,16 @@
-import { ServerConfig } from "./src/types.ts";
+import { ServerConfig } from './src/types.ts';
 
 export const config: ServerConfig = {
-  name: "api-suggestion-server",
-  version: "1.0.0",
+  name: 'api-suggestion-server',
+  version: '1.0.0',
   services: [
     {
-      name: "サンプルAPI",
-      openApiFilePath: "./schemas/sample-api.yaml"
+      name: 'サンプルAPI',
+      openApiFilePath: './schemas/sample-api.yaml',
     },
     {
-      name: "サンプルAPI (JSON)",
-      openApiFilePath: "./schemas/sample-api.json"
-    }
-  ]
+      name: 'サンプルAPI (JSON)',
+      openApiFilePath: './schemas/sample-api.json',
+    },
+  ],
 };

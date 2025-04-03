@@ -285,12 +285,7 @@
             "description": "作成日時"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "email",
-          "createdAt"
-        ]
+        "required": ["id", "name", "email", "createdAt"]
       },
       "UserInput": {
         "type": "object",
@@ -304,10 +299,7 @@
             "description": "メールアドレス"
           }
         },
-        "required": [
-          "name",
-          "email"
-        ]
+        "required": ["name", "email"]
       },
       "Product": {
         "type": "object",
@@ -338,13 +330,7 @@
             "description": "作成日時"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "price",
-          "category",
-          "createdAt"
-        ]
+        "required": ["id", "name", "price", "category", "createdAt"]
       }
     }
   }
