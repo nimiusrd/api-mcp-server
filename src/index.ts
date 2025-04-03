@@ -1,14 +1,9 @@
 import { readFileSync } from 'fs';
 import * as path from 'path';
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  ListToolsRequestSchema,
-  CallToolRequestSchema,
-  McpError,
-  ErrorCode,
-} from '@modelcontextprotocol/sdk/types.js';
+import { z } from 'zod';
 
 import { config } from '../server.config.js';
 import { ApiEndpoint } from './types.js';
@@ -68,59 +63,23 @@ async function fetchApiEndpoints() {
 }
 
 // MCPサーバーの初期化
-const server = new Server(
-  {
-    name: config.name,
-    version: config.version,
-  },
-  {
-    capabilities: {
-      tools: {},
-    },
-  }
-);
+const server = new McpServer({
+  name: config.name,
+  version: config.version
+});
 
 // ツールの一覧を提供
-server.setRequestHandler(ListToolsRequestSchema, async () => ({
-  tools: [
-    {
-      name: 'suggest_api',
-      description: '指定された用途に適したAPIエンドポイントをサジェストします。',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          purpose: {
-            type: 'string',
-            description: 'APIエンドポイントを使用したい用途や目的の説明。',
-          },
-        },
-        required: ['purpose'],
-      },
-    },
-  ],
-}));
-
-// ツールの呼び出しを処理
-server.setRequestHandler(CallToolRequestSchema, async request => {
-  if (request.params.name === 'suggest_api') {
-    // argumentsの型安全性を確保
-    if (!request.params.arguments || typeof request.params.arguments.purpose !== 'string') {
-      throw new McpError(ErrorCode.InvalidParams, '無効な引数です');
-    }
-
-    const { purpose } = request.params.arguments;
+server.tool('suggest_api',
+  { purpose: z.string().describe('APIエンドポイントを使用したい用途や目的の説明。') },
+  async ({ purpose }) => {
     const suggestions = apiEndpoints.filter(endpoint => endpoint.description.includes(purpose));
 
     if (suggestions.length === 0) {
-      throw new McpError(
-        ErrorCode.InternalError,
-        '該当するAPIエンドポイントが見つかりませんでした。'
-      );
+      throw new Error('該当するAPIエンドポイントが見つかりませんでした。');
     }
-    return { toolResult: suggestions };
+    return { content: [{ type: 'text', text: JSON.stringify(suggestions) }] };
   }
-  throw new McpError(ErrorCode.InternalError, 'ツールが見つかりません');
-});
+);
 
 // メイン関数
 async function main() {

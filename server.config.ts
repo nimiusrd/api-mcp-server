@@ -1,4 +1,4 @@
-import { ServerConfig } from './src/types.ts';
+import { ServerConfig } from './src/types.js';
 
 export const config: ServerConfig = {
   name: 'api-suggestion-server',

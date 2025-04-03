@@ -1,13 +1,18 @@
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock server functionality
-vi.mock('@modelcontextprotocol/sdk/server/index.js', () => {
+vi.mock('@modelcontextprotocol/sdk/server/mcp.js', () => {
   return {
-    Server: vi.fn().mockImplementation(() => ({
-      setRequestHandler: vi.fn(),
+    McpServer: vi.fn().mockImplementation(() => ({
+      tool: vi.fn(),
       connect: vi.fn().mockResolvedValue(undefined),
     })),
+  };
+});
+
+vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => {
+  return {
+    StdioServerTransport: vi.fn(),
   };
 });
 
@@ -53,16 +58,14 @@ describe('API Suggestion Server', () => {
     // Import index.ts (this needs to be done within the test)
     await import('../src/index.js');
 
+    // Import McpServer to verify mocks
+    const { McpServer } = await import('@modelcontextprotocol/sdk/server/mcp.js');
+
     // Verify that the Server constructor was called correctly
-    expect(Server).toHaveBeenCalledWith(
+    expect(McpServer).toHaveBeenCalledWith(
       {
         name: 'test-server',
         version: '1.0.0',
-      },
-      {
-        capabilities: {
-          tools: {},
-        },
       }
     );
   });

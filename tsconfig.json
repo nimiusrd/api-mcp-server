@@ -8,8 +8,8 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "noEmit": true,
-    "allowImportingTsExtensions": true
+    "noEmit": false,
+    "allowImportingTsExtensions": false
   },
   "include": ["src/**/*", "server.config.ts", "tests"],
   "exclude": ["node_modules"]
