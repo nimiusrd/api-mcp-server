@@ -13,6 +13,8 @@ import { parseOpenApiDocument } from './utils.js';
 // APIエンドポイント情報を格納する配列
 const apiEndpoints: ApiEndpoint[] = [];
 
+const schemas: any[] = [];
+
 // OpenAPIドキュメントを取得し、APIエンドポイント情報を解析する関数
 async function fetchApiEndpoints() {
   try {
@@ -41,6 +43,8 @@ async function fetchApiEndpoints() {
           console.error(`${name} のOpenAPIソースが指定されていません`);
           continue;
         }
+
+        schemas.push(data);
 
         // スキーマからAPIエンドポイント情報を抽出
         for (const path in data.paths) {
@@ -79,6 +83,13 @@ server.tool('suggest_api',
       throw new Error('該当するAPIエンドポイントが見つかりませんでした。');
     }
     return { content: [{ type: 'text', text: JSON.stringify(suggestions) }] };
+  }
+);
+
+server.tool('suggest_schema',
+  { purpose: z.string().describe('OpenAPIスキーマを使用したい用途や目的の説明。') },
+  async ({}) => {
+    return { content: [{ type: 'text', text: JSON.stringify(schemas) }] };
   }
 );
 
