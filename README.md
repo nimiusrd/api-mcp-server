@@ -250,7 +250,7 @@ api-mcp-server/
 
 ## ライセンス
 
-ISC
+MIT
 
 ## 貢献
 
