@@ -93,6 +93,18 @@ server.tool('suggest_schema',
   }
 );
 
+server.resource(
+  "openapi",
+  "config://openapi",
+  () => ({
+    contents: schemas.map(schema => ({
+      text: JSON.stringify(schema),
+      uri: `config://openapi/${schema.name}`,
+      mimeType: 'application/json'
+    }))
+  })
+);
+
 // 複数の同時接続をサポートするためのセッションIDによるトランスポートの格納
 const transports: {[sessionId: string]: SSEServerTransport} = {};
 
